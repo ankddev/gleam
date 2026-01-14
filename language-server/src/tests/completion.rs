@@ -2294,3 +2294,14 @@ pub fn main() -> Result(Int, Nil) {
 
     assert_completion!(TestProject::for_source(code), Position::new(4, 3));
 }
+
+#[test]
+fn basic_bit_array_segments_completion() {
+    let code = "
+pub fn main() {
+  <<1:>>
+}
+";
+
+    assert_completion!(TestProject::for_source(code), Position::new(2, 6));
+}

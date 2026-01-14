@@ -1,0 +1,10 @@
+---
+source: language-server/src/tests/completion.rs
+expression: "\npub fn main() {\n  <<1:>>\n}\n"
+---
+pub fn main() {
+  <<1:|>>
+}
+
+
+----- Completion content -----
