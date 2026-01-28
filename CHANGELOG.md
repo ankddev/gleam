@@ -58,6 +58,10 @@
 
   ([Andrey Kozhev](https://github.com/ankddev))
 
+- The build tool now shows better error message on passing unexpected labeled
+  arguments by taking into account, whether it's a function or a constructor.
+  ([Andrey Kozhev](https://github.com/ankddev))
+
 ### Language server
 
 - The language server now allows extracting the start of a pipeline into a
