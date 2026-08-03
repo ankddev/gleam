@@ -14,8 +14,9 @@ use super::*;
 use crate::{
     analyse::{self, Inferred, name::check_name_case},
     ast::{
-        AssignName, BitArrayOption, BitArraySize, ImplicitCallArgOrigin, Layer, TailPattern,
-        TypedBitArraySize, UntypedPatternBitArraySegment,
+        AssignName, BitArrayOption, BitArraySize, ImplicitCallArgOrigin, Layer,
+        StringPrefixLeftSideAssignment, TailPattern, TypedBitArraySize,
+        UntypedPatternBitArraySegment,
     },
     parse::PatternPosition,
     reference::ReferenceKind,
@@ -740,11 +741,16 @@ impl<'a, 'b> PatternTyper<'a, 'b> {
                 self.unify_types(type_, string(), location);
 
                 // The left hand side may assign a variable, which is the prefix of the string
-                if let Some((left, left_location)) = &left_side_assignment {
+                if let Some(StringPrefixLeftSideAssignment {
+                    name: left_name,
+                    name_location: left_name_location,
+                    location: left_location,
+                }) = &left_side_assignment
+                {
                     self.insert_variable(
-                        left,
+                        left_name,
                         string(),
-                        *left_location,
+                        *left_name_location,
                         VariableOrigin {
                             syntax: VariableSyntax::AssignmentPattern(*left_location),
                             declaration: self.position.to_declaration(),

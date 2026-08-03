@@ -2261,9 +2261,14 @@ fn pattern_and_expression_are_the_same(pattern: &TypedPattern, expression: &Type
         ) => {
             let left_side_matches = match (left_side_assignment, left_side_string, left.as_ref()) {
                 (_, left_side_string, TypedExpr::String { value, .. }) => value == left_side_string,
-                (Some((left_side_name, _)), _, TypedExpr::Var { name, .. }) => {
-                    left_side_name == name
-                }
+                (
+                    Some(StringPrefixLeftSideAssignment {
+                        name: left_side_name,
+                        ..
+                    }),
+                    _,
+                    TypedExpr::Var { name, .. },
+                ) => left_side_name == name,
                 (_, _, _) => false,
             };
             let right_side_matches = match (right_side_assignment, right.as_ref()) {
@@ -2933,7 +2938,7 @@ pub enum Pattern<Type> {
     StringPrefix {
         location: SrcSpan,
         left_location: SrcSpan,
-        left_side_assignment: Option<(EcoString, SrcSpan)>,
+        left_side_assignment: Option<StringPrefixLeftSideAssignment>,
         right_location: SrcSpan,
         left_side_string: EcoString,
         /// The variable on the right hand side of the `<>`.
@@ -3309,7 +3314,10 @@ impl TypedPattern {
                     match (left_side_assignment, other_left_side_assignment) {
                         (None, None) => true,
                         (None, Some(_)) | (Some(_), None) => false,
-                        (Some((one, _)), Some((other, _))) => one == other,
+                        (
+                            Some(StringPrefixLeftSideAssignment { name: one, .. }),
+                            Some(StringPrefixLeftSideAssignment { name: other, .. }),
+                        ) => one == other,
                     };
                 let right_side_assignments_are_equal =
                     match (right_side_assignment, other_right_side_assignment) {
@@ -3452,9 +3460,14 @@ impl TypedPattern {
                 ..
             } => {
                 // Handle the prefix alias: "prefix" as name
-                if let Some((name, left_side_assignment_location)) = left_side_assignment
+                if let Some(StringPrefixLeftSideAssignment {
+                    name,
+                    name_location: left_side_assignment_location,
+                    location,
+                }) = left_side_assignment
                     && left_side_assignment_location.contains(byte_index)
                 {
+                    // TODO(ankddev)
                     return Some(Located::StringPrefixPatternVariable {
                         location: *left_side_assignment_location,
                         name,
@@ -3675,7 +3688,12 @@ impl TypedPattern {
                 right_location,
                 ..
             } => {
-                if let Some((name, location)) = left_side_assignment {
+                if let Some(StringPrefixLeftSideAssignment {
+                    name,
+                    name_location: location,
+                    ..
+                }) = left_side_assignment
+                {
                     variables.push(BoundVariable {
                         name: BoundVariableName::Regular { name: name.clone() },
                         location: *location,
@@ -3705,6 +3723,13 @@ impl<A> HasLocation for Pattern<A> {
     fn location(&self) -> SrcSpan {
         self.location()
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StringPrefixLeftSideAssignment {
+    pub name: EcoString,
+    pub name_location: SrcSpan,
+    pub location: SrcSpan,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

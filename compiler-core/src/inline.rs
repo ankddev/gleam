@@ -128,10 +128,10 @@ use crate::{
     ast::{
         self, ArgNames, Assert, AssignName, Assignment, AssignmentKind, BitArrayOption,
         BitArraySegment, BitArraySize, CallArg, Clause, FunctionLiteralKind, Pattern,
-        PipelineAssignmentKind, Publicity, SrcSpan, Statement, TailPattern, TypedArg, TypedAssert,
-        TypedAssignment, TypedBitArraySize, TypedClause, TypedDefinitions, TypedExpr,
-        TypedExprBitArraySegment, TypedFunction, TypedModule, TypedPattern,
-        TypedPipelineAssignment, TypedStatement, TypedUse, visit::Visit,
+        PipelineAssignmentKind, Publicity, SrcSpan, Statement, StringPrefixLeftSideAssignment,
+        TailPattern, TypedArg, TypedAssert, TypedAssignment, TypedBitArraySize, TypedClause,
+        TypedDefinitions, TypedExpr, TypedExprBitArraySegment, TypedFunction, TypedModule,
+        TypedPattern, TypedPipelineAssignment, TypedStatement, TypedUse, visit::Visit,
     },
     exhaustiveness::{Body, CompiledCase, Decision},
     type_::{
@@ -432,8 +432,17 @@ impl Inliner<'_> {
             } => Pattern::StringPrefix {
                 location,
                 left_location,
-                left_side_assignment: left_side_assignment
-                    .map(|(name, location)| (self.define_variable(name), location)),
+                left_side_assignment: left_side_assignment.map(
+                    |StringPrefixLeftSideAssignment {
+                         name,
+                         name_location,
+                         location,
+                     }| StringPrefixLeftSideAssignment {
+                        name: self.define_variable(name),
+                        name_location,
+                        location,
+                    },
+                ),
                 right_location,
                 left_side_string,
                 right_side_assignment: match right_side_assignment {

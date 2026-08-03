@@ -9,8 +9,7 @@ use ecow::{EcoString, eco_format};
 use gleam_core::{
     Error, Result,
     ast::{
-        CustomType, Import, ModuleConstant, TypeAlias, TypeAstConstructor, TypeAstFn, TypeAstHole,
-        TypeAstTuple, TypeAstVar, *,
+        CustomType, Import, ModuleConstant, StringPrefix, TypeAlias, TypeAstConstructor, TypeAstFn, TypeAstHole, TypeAstTuple, TypeAstVar, *
     },
     build::Target,
     io::Utf8Writer,
@@ -1520,7 +1519,7 @@ impl<'a, 'doc> Formatter<'a> {
                 | Pattern::BitArraySize(_)
                 | Pattern::Assign { .. }
                 | Pattern::Discard { .. }
-                | Pattern::StringPrefix { .. }
+                | Pattern::StringPrefix(StringPrefix { .. })
                 | Pattern::Invalid { .. } => false,
             }
         }
@@ -2965,12 +2964,12 @@ impl<'a, 'doc> Formatter<'a> {
                 self.bit_array(arena, segment_docs, ItemsPacking::FitOnePerLine, location)
             }
 
-            Pattern::StringPrefix {
+            Pattern::StringPrefix(StringPrefix {
                 left_side_string: left,
                 right_side_assignment: right,
                 left_side_assignment: left_assign,
                 ..
-            } => {
+            }) => {
                 let left = self.string(arena, left);
                 let right = match right {
                     AssignName::Variable(name) => name.to_doc(arena),

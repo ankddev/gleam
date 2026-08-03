@@ -11,13 +11,14 @@ use crate::{
     ast::{
         Assert, AssignName, Assignment, BinOp, BitArraySize, CallArg, Constant, Definition,
         FunctionLiteralKind, InvalidExpression, Pattern, RecordBeingUpdated, RecordUpdateArg,
-        SrcSpan, Statement, TailPattern, TargetedDefinition, TodoKind, TypeAst, TypeAstConstructor,
-        TypeAstFn, TypeAstHole, TypeAstTuple, TypeAstVar, UntypedArg, UntypedAssert,
-        UntypedAssignment, UntypedClause, UntypedConstant, UntypedConstantBitArraySegment,
-        UntypedCustomType, UntypedDefinition, UntypedExpr, UntypedExprBitArraySegment,
-        UntypedFunction, UntypedImport, UntypedModule, UntypedModuleConstant, UntypedPattern,
-        UntypedPatternBitArraySegment, UntypedRecordUpdateArg, UntypedStatement,
-        UntypedTailPattern, UntypedTypeAlias, UntypedUse, UntypedUseAssignment, Use, UseAssignment,
+        SrcSpan, Statement, StringPrefixLeftSideAssignment, TailPattern,
+        TargetedDefinition, TodoKind, TypeAst, TypeAstConstructor, TypeAstFn, TypeAstHole,
+        TypeAstTuple, TypeAstVar, UntypedArg, UntypedAssert, UntypedAssignment, UntypedClause,
+        UntypedConstant, UntypedConstantBitArraySegment, UntypedCustomType, UntypedDefinition,
+        UntypedExpr, UntypedExprBitArraySegment, UntypedFunction, UntypedImport, UntypedModule,
+        UntypedModuleConstant, UntypedPattern, UntypedPatternBitArraySegment,
+        UntypedRecordUpdateArg, UntypedStatement, UntypedTailPattern, UntypedTypeAlias, UntypedUse,
+        UntypedUseAssignment, Use, UseAssignment,
     },
     build::Target,
     parse::LiteralFloatValue,
@@ -1607,7 +1608,7 @@ pub trait PatternFolder {
         &mut self,
         location: SrcSpan,
         left_location: SrcSpan,
-        left_side_assignment: Option<(EcoString, SrcSpan)>,
+        left_side_assignment: Option<StringPrefixLeftSideAssignment>,
         right_location: SrcSpan,
         left_side_string: EcoString,
         right_side_assignment: AssignName,
@@ -1638,7 +1639,7 @@ pub trait PatternFolder {
             | Pattern::String { .. }
             | Pattern::Discard { .. }
             | Pattern::BitArraySize { .. }
-            | Pattern::StringPrefix { .. }
+            | Pattern::StringPrefix{ .. }
             | Pattern::Invalid { .. } => pattern,
 
             Pattern::Assign {
