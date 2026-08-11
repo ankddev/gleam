@@ -18,7 +18,7 @@ use gleam_core::{
     warning::{VectorWarningEmitterIO, WarningEmitter},
 };
 use hexpm::version::Version;
-use im::HashMap;
+use imbl::HashMap;
 use std::{cell::RefCell, collections::HashSet, rc::Rc};
 use wasm_filesystem::WasmFileSystem;
 
@@ -169,8 +169,8 @@ pub fn pop_warning(project_id: usize) -> Option<String> {
 
 fn do_compile_package(project: Project, target: Target) -> Result<(), Error> {
     let ids = UniqueIdGenerator::new();
-    let mut type_manifests = im::HashMap::new();
-    let mut defined_modules = im::HashMap::new();
+    let mut type_manifests = imbl::HashMap::new();
+    let mut defined_modules = imbl::HashMap::new();
     #[allow(clippy::arc_with_non_send_sync)]
     let warning_emitter = WarningEmitter::new(Rc::new(project.warnings));
     let config = PackageConfig {

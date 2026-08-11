@@ -3,7 +3,7 @@
 
 use bimap::{BiHashMap, BiMap};
 use ecow::{EcoString, eco_format};
-use im::HashMap;
+use imbl::HashMap;
 use std::{collections::HashSet, sync::Arc};
 
 use crate::{

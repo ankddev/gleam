@@ -1743,8 +1743,8 @@ impl Confidence {
 #[derive(Clone, Eq, PartialEq, Debug, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Offset {
     pub constant: BigInt,
-    pub variables: im::HashMap<VariableUsage, usize>,
-    pub calculations: im::Vector<OffsetCalculation>,
+    pub variables: imbl::HashMap<VariableUsage, usize>,
+    pub calculations: imbl::Vector<OffsetCalculation>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, serde::Serialize, serde::Deserialize)]
@@ -1758,8 +1758,8 @@ impl Offset {
     pub fn constant(value: impl Into<BigInt>) -> Self {
         Self {
             constant: value.into(),
-            variables: im::HashMap::new(),
-            calculations: im::Vector::new(),
+            variables: imbl::HashMap::new(),
+            calculations: imbl::Vector::new(),
         }
     }
 
@@ -4103,8 +4103,8 @@ fn bit_array_size(
 ///
 #[must_use]
 fn superset(
-    one: &im::HashMap<VariableUsage, usize>,
-    other: &im::HashMap<VariableUsage, usize>,
+    one: &imbl::HashMap<VariableUsage, usize>,
+    other: &imbl::HashMap<VariableUsage, usize>,
 ) -> bool {
     other
         .iter()

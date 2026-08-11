@@ -892,9 +892,9 @@ checksum = "869b0adbda23651a9c5c0c3d270aac9fcb52e8622a8f2b17e57802d7791962f2"
 
 [[package]]
 name = "equivalent"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
+checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "erlang-generation"
@@ -1250,7 +1250,7 @@ dependencies = [
  "http",
  "http-serde",
  "ignore",
- "im",
+ "imbl",
  "insta",
  "itertools 0.15.0",
  "lsp-server",
@@ -1304,7 +1304,7 @@ dependencies = [
  "http",
  "id-arena",
  "ignore",
- "im",
+ "imbl",
  "indexmap",
  "insta",
  "itertools 0.15.0",
@@ -1362,7 +1362,7 @@ dependencies = [
  "gleam-core",
  "gleam-format",
  "hexpm",
- "im",
+ "imbl",
  "insta",
  "itertools 0.15.0",
  "lsp-server",
@@ -1384,7 +1384,7 @@ dependencies = [
  "getrandom 0.2.15",
  "gleam-core",
  "hexpm",
- "im",
+ "imbl",
  "itertools 0.15.0",
  "serde",
  "serde-wasm-bindgen",
@@ -1820,10 +1820,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "im"
-version = "15.1.0"
+name = "imbl"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0acd33ff0285af998aaf9b57342af478078f53492322fafc47450e09397e0e9"
+checksum = "543682c9082b25e63d03b5acbd65ad111fd49dd93e70843e5175db4ff81d606b"
 dependencies = [
  "bitmaps",
  "rand_core 0.6.4",
@@ -2438,7 +2438,7 @@ name = "pretty-arena"
 version = "1.0.0"
 dependencies = [
  "ecow",
- "im",
+ "imbl",
  "num-bigint 0.5.1",
  "typed-arena",
  "unicode-segmentation",
@@ -3561,7 +3561,7 @@ version = "0.1.0"
 dependencies = [
  "camino",
  "gleam-core",
- "im",
+ "imbl",
  "insta",
  "itertools 0.15.0",
  "regex",
@@ -3586,7 +3586,7 @@ version = "1.18.0"
 dependencies = [
  "camino",
  "gleam-core",
- "im",
+ "imbl",
  "insta",
  "itertools 0.15.0",
  "regex",
@@ -3600,7 +3600,7 @@ version = "1.18.0"
 dependencies = [
  "camino",
  "gleam-core",
- "im",
+ "imbl",
  "insta",
  "itertools 0.15.0",
  "regex",

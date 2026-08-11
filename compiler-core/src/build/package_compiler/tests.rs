@@ -61,7 +61,7 @@ fn compile_modules(
 
     compiler.compile(
         &WarningEmitter::null(),
-        &mut im::HashMap::new(),
+        &mut imbl::HashMap::new(),
         &mut already_defined_modules,
         &mut StaleTracker::default(),
         &mut HashSet::new(),

@@ -4,7 +4,7 @@
 use crate::error::wrap;
 use ecow::EcoString;
 use hexpm::version::Version;
-use im::HashSet;
+use imbl::HashSet;
 use itertools::Itertools;
 use petgraph::Direction;
 use petgraph::algo::all_simple_paths;

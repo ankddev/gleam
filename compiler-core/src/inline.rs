@@ -147,7 +147,7 @@ use crate::{
 /// individual function.
 pub fn module(
     mut module: TypedModule,
-    modules: &im::HashMap<EcoString, ModuleInterface>,
+    modules: &imbl::HashMap<EcoString, ModuleInterface>,
 ) -> TypedModule {
     let mut inliner = Inliner::new(modules);
 
@@ -167,7 +167,7 @@ pub fn module(
 struct Inliner<'a> {
     /// Importable modules, containing information about functions which can be
     /// inlined
-    modules: &'a im::HashMap<EcoString, ModuleInterface>,
+    modules: &'a imbl::HashMap<EcoString, ModuleInterface>,
     /// Any variables which can be inlined. This is used when inlining the body
     /// of function calls. Let's look at an example inlinable function:
     /// ```gleam
@@ -200,7 +200,7 @@ struct Inliner<'a> {
     /// If two variables conflict in names during inlining, we need to rename
     /// one to avoid the conflict. Any variables renamed this way are stored
     /// here.
-    renamed_variables: im::HashMap<EcoString, EcoString>,
+    renamed_variables: imbl::HashMap<EcoString, EcoString>,
     /// The current position, whether we are inside the body of an inlined
     /// function or not.
     position: Position,
@@ -213,12 +213,12 @@ enum Position {
 }
 
 impl Inliner<'_> {
-    fn new(modules: &im::HashMap<EcoString, ModuleInterface>) -> Inliner<'_> {
+    fn new(modules: &imbl::HashMap<EcoString, ModuleInterface>) -> Inliner<'_> {
         Inliner {
             modules,
             inline_variables: HashMap::new(),
             variable_number: 0,
-            renamed_variables: im::HashMap::new(),
+            renamed_variables: imbl::HashMap::new(),
             in_scope: HashSet::new(),
             position: Position::RegularFunction,
         }
