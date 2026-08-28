@@ -424,7 +424,8 @@ impl<'a> CallGraphBuilder<'a> {
             | BitArrayOption::Utf32 { .. }
             | BitArrayOption::Utf32Codepoint { .. }
             | BitArrayOption::Utf8 { .. }
-            | BitArrayOption::Utf8Codepoint { .. } => (),
+            | BitArrayOption::Utf8Codepoint { .. }
+            | BitArrayOption::Invalid { .. } => (),
 
             BitArrayOption::Size { value: pattern, .. } => {
                 process(self, pattern);

@@ -1147,7 +1147,8 @@ impl Inliner<'_> {
             | BitArrayOption::Big { .. }
             | BitArrayOption::Little { .. }
             | BitArrayOption::Native { .. }
-            | BitArrayOption::Unit { .. } => option,
+            | BitArrayOption::Unit { .. }
+            | BitArrayOption::Invalid { .. } => option, // TODO(ankddev)
             BitArrayOption::Size {
                 location,
                 value,

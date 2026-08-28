@@ -1857,6 +1857,7 @@ where
         BitArrayOption::Big { location } => Ok(BitArrayOption::Big { location }),
         BitArrayOption::Little { location } => Ok(BitArrayOption::Little { location }),
         BitArrayOption::Native { location } => Ok(BitArrayOption::Native { location }),
+        BitArrayOption::Invalid { location } => Ok(BitArrayOption::Invalid { location }) // TODO(ankddev)
     }
 }
 

@@ -2063,6 +2063,7 @@ where
             location: _,
             value: _,
         } => { /* TODO */ }
+        BitArrayOption::Invalid { location: _ } => { /* TODO */ }
     }
 }
 
@@ -2349,6 +2350,7 @@ pub fn visit_typed_pattern_bit_array_option<'a, V>(
             location: _,
             value: _,
         } => { /* TODO */ }
+        BitArrayOption::Invalid { location: _ } => { /* TODO */ }
     }
 }
 

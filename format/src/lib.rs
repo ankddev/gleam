@@ -4550,6 +4550,7 @@ where
             .append(arena, OPEN_PAREN_DOCUMENT)
             .append(arena, eco_format!("{value}"))
             .append(arena, CLOSE_PAREN_DOCUMENT),
+        BitArrayOption::Invalid { .. } => unreachable!("made it to codegen"), // TODO(ankddev)
     }
 }
 

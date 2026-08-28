@@ -2723,6 +2723,9 @@ impl<'a, 'generator> FunctionGenerator<'a, 'generator> {
             BitArrayOption::Native { .. } => Some(BitArraySegmentSpecifier::Native),
             BitArrayOption::Unit { value, .. } => Some(BitArraySegmentSpecifier::Unit(*value)),
             BitArrayOption::Size { .. } => None,
+            BitArrayOption::Invalid { .. } => {
+                unreachable!("invalid option made it to code generation")
+            } // TODO(ankddev)
         }));
     }
 
@@ -3959,6 +3962,8 @@ fn expression_segment_string_encoding(
         | BitArrayOption::Native { .. }
         | BitArrayOption::Size { .. }
         | BitArrayOption::Unit { .. } => None,
+
+        BitArrayOption::Invalid { .. } => unreachable!("made it to codegen"), // TODO(ankddev)
     })
 }
 

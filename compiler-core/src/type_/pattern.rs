@@ -571,7 +571,8 @@ impl<'a, 'b> PatternTyper<'a, 'b> {
                     | BitArrayOption::Little { .. }
                     | BitArrayOption::Native { .. }
                     | BitArrayOption::Size { .. }
-                    | BitArrayOption::Unit { .. } => (),
+                    | BitArrayOption::Unit { .. }
+                    | BitArrayOption::Invalid { .. } => (),
                 }
             }
         }
@@ -1559,7 +1560,8 @@ impl<'a, 'b> PatternTyper<'a, 'b> {
             | BitArrayOption::Big { .. }
             | BitArrayOption::Little { .. }
             | BitArrayOption::Native { .. }
-            | BitArrayOption::Unit { .. } => None,
+            | BitArrayOption::Unit { .. }
+            | BitArrayOption::Invalid { .. } => None,
         }) else {
             return;
         };

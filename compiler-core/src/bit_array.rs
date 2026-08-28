@@ -81,6 +81,8 @@ impl<T> SegmentOptionCategories<'_, T> {
             | Native { .. }
             | Size { .. }
             | Unit { .. } => panic!("Tried to type a non type kind BitArray option."),
+
+            Invalid { .. } => panic!(""), // TODO(ankddev)
         }
     }
 }
@@ -194,6 +196,10 @@ where
                     categories.unit = Some(option);
                 }
             }
+
+            Invalid { .. } => {
+                return err(ErrorType::FloatWithSize, option.location());
+            } // TODO(ankddev)
         }
     }
 

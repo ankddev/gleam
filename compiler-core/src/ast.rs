@@ -3932,7 +3932,8 @@ impl<Value, Type> BitArraySegment<Value, Type> {
             | BitArrayOption::Big { .. }
             | BitArrayOption::Little { .. }
             | BitArrayOption::Native { .. }
-            | BitArrayOption::Unit { .. } => None,
+            | BitArrayOption::Unit { .. }
+            | BitArrayOption::Invalid { .. } => None,
         })
     }
 
@@ -3960,7 +3961,8 @@ impl<Value, Type> BitArraySegment<Value, Type> {
                 | BitArrayOption::Big { .. }
                 | BitArrayOption::Little { .. }
                 | BitArrayOption::Native { .. }
-                | BitArrayOption::Size { .. } => {}
+                | BitArrayOption::Size { .. }
+                | BitArrayOption::Invalid { .. } => {}
             }
         }
 
@@ -4189,6 +4191,10 @@ pub enum BitArrayOption<Value> {
         location: SrcSpan,
         value: u8,
     },
+
+    Invalid {
+        location: SrcSpan,
+    },
 }
 
 impl<A> BitArrayOption<A> {
@@ -4210,7 +4216,8 @@ impl<A> BitArrayOption<A> {
             | BitArrayOption::Big { .. }
             | BitArrayOption::Little { .. }
             | BitArrayOption::Native { .. }
-            | BitArrayOption::Unit { .. } => None,
+            | BitArrayOption::Unit { .. }
+            | BitArrayOption::Invalid { .. } => None,
         }
     }
 
@@ -4232,7 +4239,8 @@ impl<A> BitArrayOption<A> {
             | BitArrayOption::Little { location }
             | BitArrayOption::Native { location }
             | BitArrayOption::Size { location, .. }
-            | BitArrayOption::Unit { location, .. } => *location,
+            | BitArrayOption::Unit { location, .. }
+            | BitArrayOption::Invalid { location } => *location,
         }
     }
 
@@ -4255,6 +4263,7 @@ impl<A> BitArrayOption<A> {
             BitArrayOption::Native { .. } => "native".into(),
             BitArrayOption::Size { .. } => "size".into(),
             BitArrayOption::Unit { .. } => "unit".into(),
+            BitArrayOption::Invalid { .. } => EcoString::new(), // TODO(ankddev)
         }
     }
 
@@ -4277,7 +4286,8 @@ impl<A> BitArrayOption<A> {
             | BitArrayOption::Little { .. }
             | BitArrayOption::Native { .. }
             | BitArrayOption::Size { .. }
-            | BitArrayOption::Unit { .. } => false,
+            | BitArrayOption::Unit { .. }
+            | BitArrayOption::Invalid { .. } => false,
         }
     }
 
@@ -4347,6 +4357,7 @@ impl<A> BitArrayOption<A> {
                 },
             ) => short_form == other_short_form && compare_sizes(value, other_value),
             (BitArrayOption::Size { .. }, _) => false,
+            (BitArrayOption::Invalid { .. }, _) => false,
         }
     }
 }
@@ -4369,7 +4380,8 @@ impl BitArrayOption<TypedConstant> {
             | BitArrayOption::Big { .. }
             | BitArrayOption::Little { .. }
             | BitArrayOption::Unit { .. }
-            | BitArrayOption::Native { .. } => im::hashset![],
+            | BitArrayOption::Native { .. }
+            | BitArrayOption::Invalid { .. } => im::hashset![],
 
             BitArrayOption::Size { value, .. } => value.referenced_variables(),
         }
@@ -4394,7 +4406,8 @@ impl BitArrayOption<TypedPattern> {
             | BitArrayOption::Big { .. }
             | BitArrayOption::Little { .. }
             | BitArrayOption::Native { .. }
-            | BitArrayOption::Unit { .. } => None,
+            | BitArrayOption::Unit { .. }
+            | BitArrayOption::Invalid { .. } => None,
             BitArrayOption::Size { value, .. } => value.find_node(byte_index),
         }
     }
@@ -4418,7 +4431,8 @@ impl BitArrayOption<TypedConstant> {
             | BitArrayOption::Big { .. }
             | BitArrayOption::Little { .. }
             | BitArrayOption::Native { .. }
-            | BitArrayOption::Unit { .. } => None,
+            | BitArrayOption::Unit { .. }
+            | BitArrayOption::Invalid { .. } => None,
             BitArrayOption::Size { value, .. } => value.find_node(byte_index),
         }
     }

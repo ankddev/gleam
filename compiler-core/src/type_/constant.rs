@@ -1021,7 +1021,8 @@ impl<'expression_typer, 'env, 'module> ConstantTyper<'expression_typer, 'env, 'm
             | BitArrayOption::Big { .. }
             | BitArrayOption::Little { .. }
             | BitArrayOption::Native { .. }
-            | BitArrayOption::Unit { .. } => None,
+            | BitArrayOption::Unit { .. }
+            | BitArrayOption::Invalid { .. } => None,
         }) else {
             return;
         };

@@ -4086,7 +4086,8 @@ fn can_be_constant(
                         | ast::BitArrayOption::Big { .. }
                         | ast::BitArrayOption::Little { .. }
                         | ast::BitArrayOption::Native { .. }
-                        | ast::BitArrayOption::Unit { .. } => true,
+                        | ast::BitArrayOption::Unit { .. }
+                        | ast::BitArrayOption::Invalid { .. } => true,
                     })
                 })
         }

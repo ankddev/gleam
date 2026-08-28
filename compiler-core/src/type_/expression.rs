@@ -4297,7 +4297,8 @@ impl<'a, 'b> ExprTyper<'a, 'b> {
             | BitArrayOption::Big { .. }
             | BitArrayOption::Little { .. }
             | BitArrayOption::Native { .. }
-            | BitArrayOption::Unit { .. } => None,
+            | BitArrayOption::Unit { .. }
+            | BitArrayOption::Invalid { .. } => None,
         }) else {
             return;
         };

@@ -4058,18 +4058,18 @@ where
                                 short_form: false,
                             }))
                         }
-                        _ => parse_error(
-                            ParseErrorType::InvalidBitArraySegment,
-                            SrcSpan { start, end },
-                        ),
+                        _ => Ok(Some(BitArrayOption::Invalid {
+                            location: SrcSpan { start, end },
+                        })),
                     }
                 } else {
-                    str_to_bit_array_option(&name, SrcSpan { start, end })
-                        .ok_or(ParseError {
-                            error: ParseErrorType::InvalidBitArraySegment,
-                            location: SrcSpan { start, end },
-                        })
-                        .map(Some)
+                    Ok(Some(
+                        str_to_bit_array_option(&name, SrcSpan { start, end }).unwrap_or(
+                            BitArrayOption::Invalid {
+                                location: SrcSpan { start, end },
+                            },
+                        ),
+                    ))
                 }
             }
             // int segment
