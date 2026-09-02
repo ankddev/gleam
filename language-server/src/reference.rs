@@ -478,6 +478,59 @@ pub fn reference_for_ast_node(
             label,
             location,
         }),
+        Located::Constant(ast::Constant::Var {
+            location,
+            name,
+            constructor: Some(constructor),
+            module,
+            name_start,
+            ..
+        }) => {
+            let is_qualified = module.is_some();
+            let name_location = SrcSpan::new(*name_start, location.end);
+            let rename_target = if is_qualified {
+                RenameTarget::Qualified
+            } else {
+                RenameTarget::Unqualified
+            };
+            match &constructor.variant {
+                ValueConstructorVariant::ModuleConstant { module, .. } => {
+                    Some(Referenced::ModuleValue {
+                        module: module.clone(),
+                        name: name.clone(),
+                        location: name_location,
+                        name_start: *name_start,
+                        name_kind: Named::Constant,
+                        target_kind: rename_target,
+                    })
+                }
+                ValueConstructorVariant::ModuleFn { module, .. } => Some(Referenced::ModuleValue {
+                    module: module.clone(),
+                    name: name.clone(),
+                    location: name_location,
+                    name_start: *name_start,
+                    name_kind: Named::Function,
+                    target_kind: rename_target,
+                }),
+                ValueConstructorVariant::Record { module, .. } => Some(Referenced::ModuleValue {
+                    module: module.clone(),
+                    name: name.clone(),
+                    location: name_location,
+                    name_start: *name_start,
+                    name_kind: Named::CustomTypeVariant,
+                    target_kind: rename_target,
+                }),
+                ValueConstructorVariant::LocalVariable {
+                    location: definition_location,
+                    origin,
+                } => Some(Referenced::LocalVariable {
+                    definition_location: *definition_location,
+                    location: name_location,
+                    origin: Some(origin.clone()),
+                    name: name.clone(),
+                }),
+            }
+        }
 
         Located::Pattern(_)
         | Located::ClauseGuard(_)

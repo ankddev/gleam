@@ -2110,6 +2110,7 @@ impl<'ast, IO> ast::visit::Visit<'ast> for QualifiedToUnqualifiedImportFirstPass
         module: &'ast Option<(EcoString, SrcSpan)>,
         name: &'ast EcoString,
         constructor: &'ast Option<Box<ValueConstructor>>,
+        name_start: &'ast u32,
         type_: &'ast Arc<Type>,
     ) {
         let range = src_span_to_lsp_range(*location, self.line_numbers);
@@ -2126,7 +2127,15 @@ impl<'ast, IO> ast::visit::Visit<'ast> for QualifiedToUnqualifiedImportFirstPass
                 layer: ast::Layer::Value,
             });
         }
-        ast::visit::visit_typed_constant_var(self, location, module, name, constructor, type_);
+        ast::visit::visit_typed_constant_var(
+            self,
+            location,
+            module,
+            name,
+            constructor,
+            name_start,
+            type_,
+        );
     }
 }
 
@@ -2347,6 +2356,7 @@ impl<'ast> ast::visit::Visit<'ast> for QualifiedToUnqualifiedImportSecondPass<'a
         module: &'ast Option<(EcoString, SrcSpan)>,
         name: &'ast EcoString,
         constructor: &'ast Option<Box<ValueConstructor>>,
+        name_start: &'ast u32,
         type_: &'ast Arc<Type>,
     ) {
         if let Some((module_alias, _)) = module {
@@ -2361,7 +2371,15 @@ impl<'ast> ast::visit::Visit<'ast> for QualifiedToUnqualifiedImportSecondPass<'a
                 self.remove_module_qualifier(*location);
             }
         }
-        ast::visit::visit_typed_constant_var(self, location, module, name, constructor, type_);
+        ast::visit::visit_typed_constant_var(
+            self,
+            location,
+            module,
+            name,
+            constructor,
+            name_start,
+            type_,
+        );
     }
 }
 
@@ -2588,6 +2606,7 @@ impl<'ast> ast::visit::Visit<'ast> for UnqualifiedToQualifiedImportFirstPass<'as
         module: &'ast Option<(EcoString, SrcSpan)>,
         name: &'ast EcoString,
         constructor: &'ast Option<Box<ValueConstructor>>,
+        name_start: &'ast u32,
         type_: &'ast Arc<Type>,
     ) {
         if module.is_none()
@@ -2606,7 +2625,15 @@ impl<'ast> ast::visit::Visit<'ast> for UnqualifiedToQualifiedImportFirstPass<'as
         {
             self.get_module_import_from_value_constructor(module_name, name);
         }
-        ast::visit::visit_typed_constant_var(self, location, module, name, constructor, type_);
+        ast::visit::visit_typed_constant_var(
+            self,
+            location,
+            module,
+            name,
+            constructor,
+            name_start,
+            type_,
+        );
     }
 }
 
@@ -2817,6 +2844,7 @@ impl<'ast> ast::visit::Visit<'ast> for UnqualifiedToQualifiedImportSecondPass<'a
         module: &'ast Option<(EcoString, SrcSpan)>,
         name: &'ast EcoString,
         constructor: &'ast Option<Box<ValueConstructor>>,
+        name_start: &'ast u32,
         type_: &'ast Arc<Type>,
     ) {
         if module.is_none() {
@@ -2829,7 +2857,15 @@ impl<'ast> ast::visit::Visit<'ast> for UnqualifiedToQualifiedImportSecondPass<'a
                 self.add_module_qualifier(*location);
             }
         }
-        ast::visit::visit_typed_constant_var(self, location, module, name, constructor, type_);
+        ast::visit::visit_typed_constant_var(
+            self,
+            location,
+            module,
+            name,
+            constructor,
+            name_start,
+            type_,
+        );
     }
 }
 

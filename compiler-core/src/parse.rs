@@ -3649,7 +3649,7 @@ where
                             end,
                         )
                     }
-                    Some((_, Token::Name { name: end_name }, end)) => {
+                    Some((name_start, Token::Name { name: end_name }, end)) => {
                         self.advance(); // name
 
                         match self.token0 {
@@ -3659,6 +3659,7 @@ where
                             }
                             _ => Ok(Some(Constant::Var {
                                 location: SrcSpan { start, end },
+                                name_start,
                                 module: Some((name, SrcSpan::new(start, module_end))),
                                 name: end_name,
                                 constructor: None,
@@ -3690,6 +3691,7 @@ where
                     }
                     _ => Ok(Some(Constant::Var {
                         location: SrcSpan { start, end },
+                        name_start: start,
                         module: None,
                         name,
                         constructor: None,
@@ -3876,6 +3878,7 @@ where
                             label: Some(label.clone()),
                             value: UntypedConstant::Var {
                                 location: SrcSpan { start, end },
+                                name_start: start,
                                 constructor: None,
                                 module: None,
                                 name: label,
@@ -3951,6 +3954,7 @@ where
                             start,
                             end: label_end,
                         },
+                        name_start: start,
                         constructor: None,
                         module: None,
                         name: label,

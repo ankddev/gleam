@@ -82,6 +82,17 @@ pub enum Constant<T> {
 
     Var {
         location: SrcSpan,
+        /// Start of the name:
+        ///
+        /// ```gleam
+        /// fn wubble() {
+        ///   wibble.wobble
+        /// //       ^
+        ///   wibble
+        /// //^
+        /// }
+        /// ```
+        name_start: u32,
         module: Option<(EcoString, SrcSpan)>,
         name: EcoString,
         constructor: Option<Box<ValueConstructor>>,

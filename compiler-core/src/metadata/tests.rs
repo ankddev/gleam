@@ -1192,6 +1192,7 @@ fn constant_var() {
 
     let one = Constant::Var {
         location: SrcSpan::default(),
+        name_start: u32::default(),
         module: None,
         name: "one_original".into(),
         type_: type_::int(),

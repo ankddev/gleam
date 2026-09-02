@@ -813,9 +813,10 @@ pub trait Visit<'ast> {
         module: &'ast Option<(EcoString, SrcSpan)>,
         name: &'ast EcoString,
         constructor: &'ast Option<Box<ValueConstructor>>,
+        name_start: &'ast u32,
         type_: &'ast Arc<Type>,
     ) {
-        visit_typed_constant_var(self, location, module, name, constructor, type_);
+        visit_typed_constant_var(self, location, module, name, constructor, name_start, type_);
     }
 
     fn visit_typed_constant_binary_operator(
@@ -876,6 +877,7 @@ pub fn visit_typed_constant_var<'a, V: Visit<'a> + ?Sized>(
     _module: &'a Option<(EcoString, SrcSpan)>,
     _name: &'a EcoString,
     _constructor: &'a Option<Box<ValueConstructor>>,
+    _name_start: &'a u32,
     _type_: &'a Arc<Type>,
 ) {
     // No further traversal needed for constant vars
@@ -1244,8 +1246,9 @@ pub fn visit_typed_constant<'a, V: Visit<'a> + ?Sized>(v: &mut V, constant: &'a 
             module,
             name,
             constructor,
+            name_start,
             type_,
-        } => v.visit_typed_constant_var(location, module, name, constructor, type_),
+        } => v.visit_typed_constant_var(location, module, name, constructor, name_start, type_),
         super::Constant::BinaryOperator {
             location,
             operator_start,

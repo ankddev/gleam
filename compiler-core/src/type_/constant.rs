@@ -393,14 +393,20 @@ impl<'expression_typer, 'env, 'module> ConstantTyper<'expression_typer, 'env, 'm
             Constant::Var {
                 location,
                 module,
+                name_start,
                 name,
                 ..
             } => {
+                // Calculate location of the value name. This is required for
+                // qualified usages, because otherwise we would also cover
+                // module select in reference, resulting in broken renamings,
+                // for example.
+                let name_location = SrcSpan::new(name_start, location.end);
                 // Infer the type of this constant
                 let constructor = match self.typer.infer_value_constructor(
                     &module,
                     &name,
-                    &location,
+                    &name_location,
                     ValueUsage::Other,
                 ) {
                     Ok(constructor) => constructor,
@@ -425,6 +431,7 @@ impl<'expression_typer, 'env, 'module> ConstantTyper<'expression_typer, 'env, 'm
                     | ValueConstructorVariant::ModuleFn { .. }
                     | ValueConstructorVariant::LocalVariable { .. } => Constant::Var {
                         location,
+                        name_start,
                         module,
                         name,
                         type_: Arc::clone(&constructor.type_),

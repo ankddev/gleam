@@ -1039,8 +1039,9 @@ pub trait UntypedConstantFolder {
                 module,
                 name,
                 constructor: _,
+                name_start,
                 type_: (),
-            } => self.fold_constant_var(location, module, name),
+            } => self.fold_constant_var(location, name_start, module, name),
 
             Constant::BinaryOperator {
                 location,
@@ -1181,11 +1182,13 @@ pub trait UntypedConstantFolder {
     fn fold_constant_var(
         &mut self,
         location: SrcSpan,
+        name_start: u32,
         module: Option<(EcoString, SrcSpan)>,
         name: EcoString,
     ) -> UntypedConstant {
         Constant::Var {
             location,
+            name_start,
             module,
             name,
             constructor: None,

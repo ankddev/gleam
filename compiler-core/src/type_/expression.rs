@@ -4565,12 +4565,14 @@ fn invalid_constant_with_annotated_type(
 
         Constant::Var {
             location,
+            name_start,
             module,
             name,
             constructor,
             type_: _,
         } => Constant::Var {
             location,
+            name_start,
             module,
             name,
             constructor,

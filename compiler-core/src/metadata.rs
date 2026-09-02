@@ -412,12 +412,14 @@ impl RemapIds {
             },
             Constant::Var {
                 location,
+                name_start,
                 module,
                 name,
                 constructor,
                 type_,
             } => Constant::Var {
                 location,
+                name_start,
                 module,
                 name,
                 constructor: constructor
