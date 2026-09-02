@@ -612,6 +612,32 @@ impl TypedConstant {
             None
         }
     }
+
+    pub fn get_documentation(&self) -> Option<&str> {
+        match self {
+            Constant::Var {
+                constructor: Some(constructor),
+                ..
+            } => constructor.get_documentation(),
+            Constant::Record {
+                record_constructor: Some(constructor),
+                ..
+            } => constructor.get_documentation(),
+
+            Constant::Int { .. }
+            | Constant::Float { .. }
+            | Constant::String { .. }
+            | Constant::Tuple { .. }
+            | Constant::List { .. }
+            | Constant::BitArray { .. }
+            | Constant::BinaryOperator { .. }
+            | Constant::Invalid { .. }
+            | Constant::Record { .. }
+            | Constant::RecordUpdate { .. }
+            | Constant::Var { .. }
+            | Constant::Todo { .. } => None,
+        }
+    }
 }
 
 impl HasType for TypedConstant {

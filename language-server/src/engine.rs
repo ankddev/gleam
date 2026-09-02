@@ -1961,8 +1961,14 @@ fn hover_for_constant(
     line_numbers: LineNumbers,
     module: &Module,
 ) -> Hover {
+    let documentation = constant.get_documentation().unwrap_or_default();
     let type_ = Printer::new(&module.ast.names).print_type(&constant.type_());
-    let contents = format!("```gleam\n{type_}\n```");
+    let contents = format!(
+        "```gleam
+{type_}
+```
+{documentation}"
+    );
     Hover {
         contents: Contents::MarkedString(MarkedString::String(contents)),
         range: Some(src_span_to_lsp_range(constant.location(), &line_numbers)),
