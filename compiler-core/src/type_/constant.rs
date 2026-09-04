@@ -600,8 +600,9 @@ impl<'expression_typer, 'env, 'module> ConstantTyper<'expression_typer, 'env, 'm
                 arity: arguments.len(),
             });
 
+        let constructor_start = arguments_start_position - name.len() as u32;
         let constructor_location = SrcSpan {
-            start: location.start,
+            start: constructor_start,
             end: arguments_start_position,
         };
         let constructor =

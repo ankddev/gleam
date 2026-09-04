@@ -532,6 +532,34 @@ pub fn reference_for_ast_node(
             }
         }
 
+        Located::Constant(ast::Constant::Record {
+            module: module_select,
+            location,
+            name,
+            record_constructor: Some(constructor),
+            arguments_start_position,
+            ..
+        }) if let ValueConstructor {
+            variant: ValueConstructorVariant::Record { ref module, .. },
+            ..
+        } = **constructor =>
+        {
+            let name_start_position = arguments_start_position - name.len() as u32;
+            let location = SrcSpan::new(name_start_position, *arguments_start_position);
+            Some(Referenced::ModuleValue {
+                module: module.clone(),
+                name: name.clone(),
+                location,
+                name_start: location.start,
+                name_kind: Named::CustomTypeVariant,
+                target_kind: if module_select.is_some() {
+                    RenameTarget::Qualified
+                } else {
+                    RenameTarget::Unqualified
+                },
+            })
+        }
+
         Located::Pattern(_)
         | Located::ClauseGuard(_)
         | Located::PatternSpread { .. }
