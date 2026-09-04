@@ -193,6 +193,9 @@
   code action in constants, patterns and bit array "size" options.
   ([Andrey Kozhev](https://github.com/ankddev))
 
+- The language server will now show documentation for values, used in constants.
+  ([Andrey Kozhev](https://github.com/ankddev))
+
 ### Formatter
 
 ### Compiler Wasm API
