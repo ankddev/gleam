@@ -1660,6 +1660,7 @@ const message = "Hello!"
 fn hover_for_constant_other_constant() {
     assert_hover!(
         "
+/// This is a documentation for constant
 const constant1 = 10
 const constant2 = constant1
 ",
@@ -1672,6 +1673,7 @@ fn hover_for_constant_record() {
     assert_hover!(
         "
 type Wibble {
+  /// This is a documentation for Wibble
   Wibble(Int)
 }
 
@@ -1736,6 +1738,7 @@ const message = "Hello " <> name
 fn hover_for_constant_string_concatenation_side() {
     assert_hover!(
         r#"
+/// This is a documentation for name
 const name = "Bob"
 const message = "Hello " <> name
 "#,

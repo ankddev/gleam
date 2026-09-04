@@ -1,8 +1,9 @@
 ---
 source: language-server/src/tests/hover.rs
-expression: "\nconst name = \"Bob\"\nconst message = \"Hello \" <> name\n"
+expression: "\n/// This is a documentation for name\nconst name = \"Bob\"\nconst message = \"Hello \" <> name\n"
 ---
 
+/// This is a documentation for name
 const name = "Bob"
 const message = "Hello " <> name
                             ↑▔▔▔
@@ -12,3 +13,4 @@ const message = "Hello " <> name
 ```gleam
 String
 ```
+ This is a documentation for name

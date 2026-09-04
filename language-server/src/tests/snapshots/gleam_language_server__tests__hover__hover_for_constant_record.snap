@@ -1,9 +1,10 @@
 ---
 source: language-server/src/tests/hover.rs
-expression: "\ntype Wibble {\n  Wibble(Int)\n}\n\nconst w = Wibble(10)\n"
+expression: "\ntype Wibble {\n  /// This is a documentation for Wibble\n  Wibble(Int)\n}\n\nconst w = Wibble(10)\n"
 ---
 
 type Wibble {
+  /// This is a documentation for Wibble
   Wibble(Int)
 }
 
@@ -15,3 +16,4 @@ const w = Wibble(10)
 ```gleam
 Wibble
 ```
+ This is a documentation for Wibble

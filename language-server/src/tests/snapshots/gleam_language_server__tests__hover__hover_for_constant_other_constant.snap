@@ -1,8 +1,9 @@
 ---
 source: language-server/src/tests/hover.rs
-expression: "\nconst constant1 = 10\nconst constant2 = constant1\n"
+expression: "\n/// This is a documentation for constant\nconst constant1 = 10\nconst constant2 = constant1\n"
 ---
 
+/// This is a documentation for constant
 const constant1 = 10
 const constant2 = constant1
                   ▔▔▔↑▔▔▔▔▔
@@ -12,3 +13,4 @@ const constant2 = constant1
 ```gleam
 Int
 ```
+ This is a documentation for constant
