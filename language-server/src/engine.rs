@@ -1306,7 +1306,9 @@ where
                 Located::ModuleConstant(constant) => {
                     Some(hover_for_module_constant(constant, lines, module))
                 }
-                Located::Constant(constant) => Some(hover_for_constant(constant, lines, module)),
+                Located::Constant(constant) => {
+                    Some(hover_for_constant(constant, lines, module, &this.hex_deps))
+                }
                 Located::ModuleImport(import) => {
                     let Some(module) = this.compiler.get_module_interface(&import.module) else {
                         return Ok(None);
@@ -1960,14 +1962,24 @@ fn hover_for_constant(
     constant: &TypedConstant,
     line_numbers: LineNumbers,
     module: &Module,
+    hex_deps: &HashSet<EcoString>,
 ) -> Hover {
     let documentation = constant.get_documentation().unwrap_or_default();
+    let link_section = get_constant_qualified_name(constant)
+        .and_then(|(module_name, name)| {
+            get_hexdocs_link_section(module_name, name, &module.ast, hex_deps)
+        })
+        .unwrap_or_default();
     let type_ = Printer::new(&module.ast.names).print_type(&constant.type_());
+    let description = [documentation, &link_section]
+        .iter()
+        .filter(|string| !string.is_empty())
+        .join("\n\n");
     let contents = format!(
         "```gleam
 {type_}
 ```
-{documentation}"
+{description}"
     );
     Hover {
         contents: Contents::MarkedString(MarkedString::String(contents)),
@@ -2354,6 +2366,69 @@ fn code_action_fix_names(
                 .preferred(true)
                 .push_to(actions);
         }
+    }
+}
+
+fn get_constant_qualified_name(constant: &TypedConstant) -> Option<(&EcoString, &EcoString)> {
+    match constant {
+        Constant::Var {
+            name,
+            constructor: Some(constructor),
+            ..
+        } if constructor.publicity.is_importable() => match &constructor.variant {
+            ValueConstructorVariant::ModuleFn {
+                module: module_name,
+                ..
+            } => Some((module_name, name)),
+
+            ValueConstructorVariant::ModuleConstant {
+                module: module_name,
+                ..
+            } => Some((module_name, name)),
+
+            ValueConstructorVariant::Record {
+                name,
+                module: module_name,
+                ..
+            } => Some((module_name, name)),
+
+            ValueConstructorVariant::LocalVariable { .. } => None,
+        },
+        Constant::Record {
+            name,
+            record_constructor: Some(constructor),
+            ..
+        } if constructor.publicity.is_importable() => match constructor.variant {
+            ValueConstructorVariant::ModuleFn {
+                module: ref module_name,
+                ..
+            } => Some((module_name, name)),
+
+            ValueConstructorVariant::ModuleConstant {
+                module: ref module_name,
+                ..
+            } => Some((module_name, name)),
+
+            ValueConstructorVariant::Record {
+                ref name,
+                module: ref module_name,
+                ..
+            } => Some((module_name, name)),
+
+            ValueConstructorVariant::LocalVariable { .. } => None,
+        },
+        Constant::Int { .. }
+        | Constant::Float { .. }
+        | Constant::String { .. }
+        | Constant::Tuple { .. }
+        | Constant::List { .. }
+        | Constant::Record { .. }
+        | Constant::RecordUpdate { .. }
+        | Constant::BitArray { .. }
+        | Constant::Var { .. }
+        | Constant::BinaryOperator { .. }
+        | Constant::Invalid { .. }
+        | Constant::Todo { .. } => None,
     }
 }
 
