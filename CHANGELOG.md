@@ -196,6 +196,14 @@
 - The language server will now show documentation for values, used in constants.
   ([Andrey Kozhev](https://github.com/ankddev))
 
+- The language server will now exclude module name from locations of references
+  of qualified values in constants, so it's now consistent with other places.
+  ([Andrey Kozhev](https://github.com/ankddev))
+
+- The language server now supports renaming and finding references of values in
+  constants.
+  ([Andrey Kozhev](https://github.com/ankddev))
+
 ### Formatter
 
 ### Compiler Wasm API
