@@ -393,9 +393,11 @@ impl RemapIds {
                              label,
                              location,
                              value,
+                             implicit,
                          }| RecordUpdateArg {
                             label,
                             location,
+                            implicit,
                             value: self.constant(value),
                         },
                     )

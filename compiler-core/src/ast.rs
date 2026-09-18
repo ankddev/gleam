@@ -2001,6 +2001,7 @@ pub struct RecordUpdateArg<A> {
     pub label: EcoString,
     pub location: SrcSpan,
     pub value: A,
+    pub implicit: Option<ImplicitCallArgOrigin>,
 }
 
 pub type UntypedRecordUpdateArg = RecordUpdateArg<UntypedExpr>;

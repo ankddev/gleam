@@ -267,16 +267,24 @@ impl TypedConstant {
                 .flatten()
                 .find_map(|argument| argument.find_node(byte_index, type_, name))
                 .unwrap_or(Located::Constant(self)),
+            // Constant::RecordUpdate {
+            //     record, arguments, ..
+            // } => record
+            //     .base
+            //     .find_node(byte_index)
+            //     .or_else(|| {
+            //         arguments
+            //             .iter()
+            //             .find_map(|arg| arg.value.find_node(byte_index))
+            //     })
+            //     .unwrap_or(Located::Constant(self)),
             Constant::RecordUpdate {
                 record, arguments, ..
-            } => record
-                .base
-                .find_node(byte_index)
-                .or_else(|| {
-                    arguments
-                        .iter()
-                        .find_map(|arg| arg.value.find_node(byte_index))
-                })
+            } => arguments
+                .iter()
+                .filter(|argument| argument.implicit.is_none())
+                .find_map(|argument| argument.value.find_node(byte_index))
+                .or_else(|| record.base.find_node(byte_index))
                 .unwrap_or(Located::Constant(self)),
             Constant::BitArray { segments, .. } => segments
                 .iter()

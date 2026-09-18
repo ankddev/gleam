@@ -2802,6 +2802,7 @@ impl<'a, 'b> ExprTyper<'a, 'b> {
                 label,
                 value,
                 location,
+                .. // todo)
             } = argument;
             let value = self.infer(value.clone());
             if argument.uses_label_shorthand() {

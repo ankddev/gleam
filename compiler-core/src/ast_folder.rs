@@ -1307,6 +1307,7 @@ pub trait UntypedConstantFolder {
                         label: argument.label,
                         location: argument.location,
                         value: self.fold_constant(argument.value),
+                        implicit: argument.implicit,
                     })
                     .collect();
                 Constant::RecordUpdate {

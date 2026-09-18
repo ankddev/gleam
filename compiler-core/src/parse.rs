@@ -2207,6 +2207,7 @@ where
                             end: value.location().end,
                         },
                         value,
+                        implicit: None,
                     })),
                     _ => {
                         // Argument supplied with a label shorthand.
@@ -2217,6 +2218,7 @@ where
                                 name: label,
                                 location: SrcSpan { start, end },
                             },
+                            implicit: None,
                         }))
                     }
                 }
@@ -3916,6 +3918,7 @@ where
                             label: name,
                             location: SrcSpan { start, end },
                             value,
+                            implicit: None,
                         }));
                     }
                     _ => {
@@ -3940,6 +3943,7 @@ where
                     end: value.location().end,
                 },
                 value,
+                implicit: None,
             })),
             _ => {
                 // Label shorthand: field without value means field: field
@@ -3960,6 +3964,7 @@ where
                         name: label,
                         type_: (),
                     },
+                    implicit: None,
                 }))
             }
         }

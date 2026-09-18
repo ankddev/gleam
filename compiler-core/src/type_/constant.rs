@@ -11,8 +11,9 @@ use src_span::SrcSpan;
 use crate::{
     analyse::Inferred,
     ast::{
-        BinOp, BitArrayOption, CallArg, Constant, InvalidExpression, TypedConstant,
-        UntypedConstant, UntypedConstantBitArraySegment,
+        BinOp, BitArrayOption, CallArg, Constant, ImplicitCallArgOrigin, InvalidExpression,
+        RecordBeingUpdated, RecordUpdateArg, TypedConstant, UntypedConstant,
+        UntypedConstantBitArraySegment,
     },
     build::Target,
     type_::{
@@ -109,277 +110,14 @@ impl<'expression_typer, 'env, 'module> ConstantTyper<'expression_typer, 'env, 'm
                 record,
                 arguments,
                 ..
-            } => {
-                self.typer
-                    .track_feature_usage(FeatureKind::ConstantRecordUpdate, location);
-                let first_argument_start =
-                    arguments.first().map(|argument| argument.location.start);
-                let constructor = match self.typer.infer_value_constructor(
-                    &module,
-                    &name,
-                    &location,
-                    ValueUsage::Call {
-                        arity: arguments.len(),
-                    },
-                ) {
-                    Ok(constructor) => constructor,
-                    Err(error) => {
-                        self.typer.problems.error(error);
-                        return self.new_invalid_constant(location);
-                    }
-                };
-
-                let (constructor_tag, field_map) = match &constructor.variant {
-                    ValueConstructorVariant::Record {
-                        name,
-                        field_map: Some(field_map),
-                        ..
-                    } => (name.clone(), field_map.clone()),
-
-                    ValueConstructorVariant::Record {
-                        field_map: None, ..
-                    } => {
-                        self.typer
-                            .problems
-                            .error(Error::RecordUpdateVariantWithNoFields {
-                                location: constructor_location,
-                            });
-                        return self.new_invalid_constant(location);
-                    }
-
-                    ValueConstructorVariant::ModuleFn { .. }
-                    | ValueConstructorVariant::LocalVariable { .. } => {
-                        self.typer
-                            .problems
-                            .error(Error::NonLocalClauseGuardVariable { location, name });
-                        return self.new_invalid_constant(location);
-                    }
-
-                    ValueConstructorVariant::ModuleConstant { .. } => {
-                        unreachable!("constant called as a record constructor")
-                    }
-                };
-
-                // Type-check the record being updated
-                let typed_record = self.do_infer(*record.base.clone());
-                let typed_record_type = typed_record.type_();
-
-                // Instantiate the constructor type to enable generic re-specialization.
-                let instantiated_constructor_type = self
-                    .typer
-                    .instantiate(constructor.type_.clone(), &mut hashmap![]);
-
-                // Extract field types and return type from the instantiated constructor
-                let (field_types, expected_type) = match instantiated_constructor_type.as_ref() {
-                    Type::Fn { arguments, return_ } => (arguments.clone(), return_.clone()),
-                    Type::Named { .. } | Type::Var { .. } | Type::Tuple { .. } => {
-                        self.typer
-                            .problems
-                            .error(Error::RecordUpdateInvalidConstructor {
-                                location: constructor_location,
-                            });
-                        return self.new_invalid_constant(location);
-                    }
-                };
-
-                // If the record being updated is a reference to a constant variable, resolve
-                // it to get the actual record value
-                let resolved_record = match &typed_record {
-                    Constant::Var {
-                        constructor: Some(value_constructor),
-                        ..
-                    } => match &value_constructor.variant {
-                        ValueConstructorVariant::ModuleConstant { literal, .. } => literal.clone(),
-                        ValueConstructorVariant::LocalVariable { .. }
-                        | ValueConstructorVariant::ModuleFn { .. }
-                        | ValueConstructorVariant::Record { .. } => typed_record,
-                    },
-                    Constant::Int { .. }
-                    | Constant::Float { .. }
-                    | Constant::String { .. }
-                    | Constant::Tuple { .. }
-                    | Constant::List { .. }
-                    | Constant::Record { .. }
-                    | Constant::RecordUpdate { .. }
-                    | Constant::BitArray { .. }
-                    | Constant::Var { .. }
-                    | Constant::BinaryOperator { .. }
-                    | Constant::Todo { .. }
-                    | Constant::Invalid { .. } => typed_record,
-                };
-
-                // Get the field arguments from the record that we'll use as the base.
-                let (base_arguments, updated_record_tag) = if let Constant::Record {
-                    arguments,
-                    record_constructor: Some(resolved_record_constructor),
-                    ..
-                } = resolved_record
-                    && let ValueConstructorVariant::Record { name, .. } =
-                        resolved_record_constructor.variant
-                {
-                    (arguments.unwrap_or(vec![]), name)
-                } else {
-                    self.typer.problems.error(convert_unify_error(
-                        UnifyError::CouldNotUnify {
-                            expected: expected_type,
-                            given: typed_record_type,
-                            situation: None,
-                        },
-                        record.base.location(),
-                    ));
-                    return self.new_invalid_constant(location);
-                };
-
-                // Check that the variant being spread matches the constructor variant
-                // For multi-variant custom types, you can't spread Dog to create Cat
-                if constructor_tag != updated_record_tag {
-                    self.typer.problems.error(Error::UnsafeRecordUpdate {
-                        location: record.base.location(),
-                        reason: UnsafeRecordUpdateReason::WrongVariant {
-                            constructed_variant: constructor_tag,
-                            spread_variant: updated_record_tag,
-                        },
-                    });
-                    return self.new_invalid_constant(location);
-                }
-
-                // Emit warning if no fields are being overridden
-                if arguments.is_empty() {
-                    self.typer
-                        .problems
-                        .warning(Warning::NoFieldsRecordUpdate { location });
-                }
-
-                let mut implicit_labelled_arguments = field_map.fields.clone();
-                let mut update_argument_indices = HashSet::new();
-
-                let mut final_arguments = base_arguments;
-                for argument in arguments {
-                    let syntax = argument.label_syntax();
-                    let label_location = argument.label_location();
-                    if argument.uses_label_shorthand() {
-                        self.typer.track_feature_usage(
-                            FeatureKind::LabelShorthandSyntax,
-                            argument.location,
-                        );
-                    }
-
-                    let label = &argument.label;
-                    let typed_value = self.do_infer(argument.value);
-
-                    let Some(index) = implicit_labelled_arguments.remove(label) else {
-                        if field_map.fields.contains_key(label) {
-                            self.typer.problems.error(Error::DuplicateArgument {
-                                location: argument.location,
-                                label: label.clone(),
-                            });
-                        } else {
-                            self.typer.problems.error(self.typer.unknown_field_error(
-                                field_map.fields.keys().cloned().collect(),
-                                expected_type,
-                                argument.location,
-                                label.clone(),
-                                FieldAccessUsage::Other,
-                            ));
-                        }
-
-                        return self.new_invalid_constant(location);
-                    };
-
-                    // Record update argument value must match the field type
-                    if let Some(expected_type) = field_types.get(index as usize)
-                        && let Err(error) = unify(expected_type.clone(), typed_value.type_())
-                    {
-                        self.typer
-                            .problems
-                            .error(convert_unify_error(error, typed_value.location()));
-                        return self.new_invalid_constant(location);
-                    }
-
-                    if let Some(type_name) = expected_type.named_type_name() {
-                        self.typer.environment.references.register_label_reference(
-                            type_name,
-                            label.clone(),
-                            label_location,
-                            syntax,
-                        );
-                    }
-
-                    let _ = update_argument_indices.insert(index as usize);
-
-                    *final_arguments
-                        .get_mut(index as usize)
-                        .expect("Index out of bounds") = CallArg {
-                        label: Some(label.clone()),
-                        value: typed_value,
-                        location: argument.location,
-                        implicit: None,
-                    };
-                }
-
-                // Emit warning if all fields are being overridden
-                if implicit_labelled_arguments.is_empty() {
-                    self.typer.problems.warning(Warning::AllFieldsRecordUpdate {
-                        location,
-                        record_location: SrcSpan::new(
-                            record.location.start,
-                            first_argument_start.unwrap_or(record.location.end),
-                        ),
-                    });
-                }
-
-                // Check that fields implicitly overridden (including unlabelled ones) have compatible types.
-                for (index, field_arg) in final_arguments.iter().enumerate() {
-                    // Skip fields that were record update arguments, as they've already been type-checked above
-                    if update_argument_indices.contains(&index) {
-                        continue;
-                    }
-
-                    if let Some(expected_field_type) = field_types.get(index)
-                        && let Err(unify_error) =
-                            unify(expected_field_type.clone(), field_arg.value.type_())
-                    {
-                        let field = field_map
-                            .fields
-                            .iter()
-                            .find(|(_, i)| **i == index as u32)
-                            .map(|(name, _)| RecordField::Labelled(name.clone()))
-                            .unwrap_or_else(|| RecordField::Unlabelled(index as u32));
-
-                        self.typer.problems.error(
-                            if let UnifyError::CouldNotUnify {
-                                expected, given, ..
-                            } = unify_error
-                            {
-                                Error::UnsafeRecordUpdate {
-                                    location: record.base.location(),
-                                    reason: UnsafeRecordUpdateReason::IncompatibleFieldTypes {
-                                        constructed_variant: expected_type,
-                                        record_variant: typed_record_type,
-                                        expected_field_type: expected,
-                                        record_field_type: given,
-                                        field,
-                                    },
-                                }
-                            } else {
-                                convert_unify_error(unify_error, location)
-                            },
-                        );
-                        return self.new_invalid_constant(location);
-                    }
-                }
-
-                Constant::Record {
-                    module,
-                    location,
-                    arguments_start_position: constructor_location.end,
-                    name,
-                    arguments: Some(final_arguments),
-                    type_: expected_type,
-                    field_map: Inferred::Known(field_map),
-                    record_constructor: Some(Box::new(constructor)),
-                }
-            }
+            } => self.infer_record_update(
+                constructor_location,
+                module,
+                location,
+                name,
+                record,
+                arguments,
+            ),
 
             Constant::Record {
                 module,
@@ -537,6 +275,319 @@ impl<'expression_typer, 'env, 'module> ConstantTyper<'expression_typer, 'env, 'm
 
             Constant::Invalid { .. } => panic!("invalid constants can not be in an untyped ast"),
         }
+    }
+
+    fn infer_record_update(
+        &mut self,
+        constructor_location: SrcSpan,
+        module: Option<(EcoString, SrcSpan)>,
+        location: SrcSpan,
+        name: EcoString,
+        record: RecordBeingUpdated<Constant<()>>,
+        arguments: Vec<RecordUpdateArg<Constant<()>>>,
+    ) -> Constant<Arc<Type>> {
+        self.typer
+            .track_feature_usage(FeatureKind::ConstantRecordUpdate, location);
+        let first_argument_start = arguments.first().map(|argument| argument.location.start);
+
+        // Infer the constructor being used
+        let constructor = match self.typer.infer_value_constructor(
+            &module,
+            &name,
+            &location,
+            ValueUsage::Call {
+                arity: arguments.len(),
+            },
+        ) {
+            Ok(constructor) => constructor,
+            Err(error) => {
+                self.typer.problems.error(error);
+                return self.new_invalid_constant(location);
+            }
+        };
+        let (constructor_tag, field_map) = match &constructor.variant {
+            ValueConstructorVariant::Record {
+                name,
+                field_map: Some(field_map),
+                ..
+            } => (name.clone(), field_map.clone()),
+
+            ValueConstructorVariant::Record {
+                field_map: None, ..
+            } => {
+                self.typer
+                    .problems
+                    .error(Error::RecordUpdateVariantWithNoFields {
+                        location: constructor_location,
+                    });
+                return self.new_invalid_constant(location);
+            }
+
+            ValueConstructorVariant::ModuleFn { .. }
+            | ValueConstructorVariant::LocalVariable { .. } => {
+                self.typer
+                    .problems
+                    .error(Error::NonLocalClauseGuardVariable { location, name });
+                return self.new_invalid_constant(location);
+            }
+
+            ValueConstructorVariant::ModuleConstant { .. } => {
+                unreachable!("constant called as a record constructor")
+            }
+        };
+        // Infer the record being updated
+        let typed_record = self.do_infer(*record.base.clone());
+        let typed_record_type = typed_record.type_();
+        // Instantiate the constructor type to enable generic re-specialization.
+        let instantiated_constructor_type = self
+            .typer
+            .instantiate(constructor.type_.clone(), &mut hashmap![]);
+        // Extract field types and return type from the instantiated constructor
+        let (field_types, expected_type) = match instantiated_constructor_type.as_ref() {
+            Type::Fn { arguments, return_ } => (arguments.clone(), return_.clone()),
+            Type::Named { .. } | Type::Var { .. } | Type::Tuple { .. } => {
+                self.typer
+                    .problems
+                    .error(Error::RecordUpdateInvalidConstructor {
+                        location: constructor_location,
+                    });
+                return self.new_invalid_constant(location);
+            }
+        };
+        // If the record being updated is a reference to a constant variable, resolve
+        // it to get the actual record value
+        let resolved_record = match &typed_record {
+            Constant::Var {
+                constructor: Some(value_constructor),
+                ..
+            } => match &value_constructor.variant {
+                ValueConstructorVariant::ModuleConstant { literal, .. } => literal.clone(),
+                ValueConstructorVariant::LocalVariable { .. }
+                | ValueConstructorVariant::ModuleFn { .. }
+                | ValueConstructorVariant::Record { .. } => typed_record.clone(),
+            },
+            Constant::Int { .. }
+            | Constant::Float { .. }
+            | Constant::String { .. }
+            | Constant::Tuple { .. }
+            | Constant::List { .. }
+            | Constant::Record { .. }
+            | Constant::RecordUpdate { .. }
+            | Constant::BitArray { .. }
+            | Constant::Var { .. }
+            | Constant::BinaryOperator { .. }
+            | Constant::Todo { .. }
+            | Constant::Invalid { .. } => typed_record.clone(),
+        };
+        // Get the field arguments from the record that we'll use as the base.
+        let (base_arguments, updated_record_tag) = if let Constant::Record {
+            arguments,
+            record_constructor: Some(resolved_record_constructor),
+            ..
+        } = resolved_record
+            && let ValueConstructorVariant::Record { name, .. } =
+                resolved_record_constructor.variant
+        {
+            (arguments.unwrap_or(vec![]), name)
+        } else {
+            self.typer.problems.error(convert_unify_error(
+                UnifyError::CouldNotUnify {
+                    expected: expected_type,
+                    given: typed_record_type,
+                    situation: None,
+                },
+                record.base.location(),
+            ));
+            return self.new_invalid_constant(location);
+        };
+        // Check that the variant being spread matches the constructor variant
+        // For multi-variant custom types, you can't spread Dog to create Cat
+        if constructor_tag != updated_record_tag {
+            self.typer.problems.error(Error::UnsafeRecordUpdate {
+                location: record.base.location(),
+                reason: UnsafeRecordUpdateReason::WrongVariant {
+                    constructed_variant: constructor_tag,
+                    spread_variant: updated_record_tag,
+                },
+            });
+            return self.new_invalid_constant(location);
+        }
+        let arguments = match self.infer_record_update_arguments(
+            location,
+            &record,
+            arguments,
+            first_argument_start,
+            &field_map,
+            typed_record_type,
+            field_types,
+            &expected_type,
+            base_arguments,
+        ) {
+            Ok(arguments) => arguments,
+            Err(constant) => return constant,
+        };
+        //     module,
+        //     location,
+        //     arguments_start_position: constructor_location.end,
+        //     name,
+        //     arguments: Some(final_arguments),
+        //     type_: expected_type,
+        //     field_map: Inferred::Known(field_map),
+        //     record_constructor: Some(Box::new(constructor)),
+        // }
+        Constant::RecordUpdate {
+            location,
+            constructor_location,
+            module,
+            name,
+            record: RecordBeingUpdated {
+                base: Box::new(typed_record),
+                location: record.location,
+            },
+            arguments,
+            type_: expected_type,
+            field_map: Inferred::Known(field_map),
+        }
+    }
+
+    fn infer_record_update_arguments(
+        &mut self,
+        location: SrcSpan,
+        record: &RecordBeingUpdated<Constant<()>>,
+        arguments: Vec<RecordUpdateArg<Constant<()>>>,
+        first_argument_start: Option<u32>,
+        field_map: &super::FieldMap,
+        typed_record_type: Arc<Type>,
+        field_types: Vec<Arc<Type>>,
+        expected_type: &Arc<Type>,
+        base_arguments: Vec<CallArg<Constant<Arc<Type>>>>,
+    ) -> Result<Vec<RecordUpdateArg<Constant<Arc<Type>>>>, Constant<Arc<Type>>> {
+        if arguments.is_empty() {
+            self.typer
+                .problems
+                .warning(Warning::NoFieldsRecordUpdate { location });
+        }
+        let mut implicit_labelled_arguments = field_map.fields.clone();
+        // let mut explicit_arguments = vec![];
+        let mut update_argument_indices = HashSet::new();
+        let mut final_arguments = base_arguments
+            .into_iter()
+            .map(|argument| RecordUpdateArg {
+                label: argument.label.unwrap_or_default(), // todo)
+                location: argument.location,
+                value: argument.value,
+                implicit: Some(ImplicitCallArgOrigin::RecordUpdate),
+            })
+            .collect::<Vec<_>>();
+        for argument in arguments {
+            let syntax = argument.label_syntax();
+            let label_location = argument.label_location();
+            if argument.uses_label_shorthand() {
+                self.typer
+                    .track_feature_usage(FeatureKind::LabelShorthandSyntax, argument.location);
+            }
+
+            let label = &argument.label;
+            let typed_value = self.do_infer(argument.value);
+
+            let Some(index) = implicit_labelled_arguments.remove(label) else {
+                if field_map.fields.contains_key(label) {
+                    self.typer.problems.error(Error::DuplicateArgument {
+                        location: argument.location,
+                        label: label.clone(),
+                    });
+                } else {
+                    self.typer.problems.error(self.typer.unknown_field_error(
+                        field_map.fields.keys().cloned().collect(),
+                        expected_type.clone(),
+                        argument.location,
+                        label.clone(),
+                        FieldAccessUsage::Other,
+                    ));
+                }
+
+                return Err(self.new_invalid_constant(location));
+            };
+
+            // Record update argument value must match the field type
+            if let Some(expected_type) = field_types.get(index as usize)
+                && let Err(error) = unify(expected_type.clone(), typed_value.type_())
+            {
+                self.typer
+                    .problems
+                    .error(convert_unify_error(error, typed_value.location()));
+                return Err(self.new_invalid_constant(location));
+            }
+
+            if let Some(type_name) = expected_type.named_type_name() {
+                self.typer.environment.references.register_label_reference(
+                    type_name,
+                    label.clone(),
+                    label_location,
+                    syntax,
+                );
+            }
+
+            let _ = update_argument_indices.insert(index as usize);
+
+            *final_arguments
+                .get_mut(index as usize)
+                .expect("Index out of bounds") = RecordUpdateArg {
+                label: label.clone(),
+                value: typed_value,
+                location: argument.location,
+                implicit: None,
+            };
+        }
+        if implicit_labelled_arguments.is_empty() {
+            self.typer.problems.warning(Warning::AllFieldsRecordUpdate {
+                location,
+                record_location: SrcSpan::new(
+                    record.location.start,
+                    first_argument_start.unwrap_or(record.location.end),
+                ),
+            });
+        }
+        for (index, field_arg) in final_arguments.iter().enumerate() {
+            // Skip fields that were record update arguments, as they've already been type-checked above
+            if update_argument_indices.contains(&index) {
+                continue;
+            }
+
+            if let Some(expected_field_type) = field_types.get(index)
+                && let Err(unify_error) =
+                    unify(expected_field_type.clone(), field_arg.value.type_())
+            {
+                let field = field_map
+                    .fields
+                    .iter()
+                    .find(|(_, i)| **i == index as u32)
+                    .map(|(name, _)| RecordField::Labelled(name.clone()))
+                    .unwrap_or_else(|| RecordField::Unlabelled(index as u32));
+
+                self.typer.problems.error(
+                    if let UnifyError::CouldNotUnify {
+                        expected, given, ..
+                    } = unify_error
+                    {
+                        Error::UnsafeRecordUpdate {
+                            location: record.base.location(),
+                            reason: UnsafeRecordUpdateReason::IncompatibleFieldTypes {
+                                constructed_variant: expected_type.clone(),
+                                record_variant: typed_record_type,
+                                expected_field_type: expected,
+                                record_field_type: given,
+                                field,
+                            },
+                        }
+                    } else {
+                        convert_unify_error(unify_error, location)
+                    },
+                );
+                return Err(self.new_invalid_constant(location));
+            }
+        }
+        Ok(final_arguments)
     }
 
     fn infer_string_concatenation(
