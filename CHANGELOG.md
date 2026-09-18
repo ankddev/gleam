@@ -204,6 +204,10 @@
   constants.
   ([Andrey Kozhev](https://github.com/ankddev))
 
+- The language server now shows links to HexDocs in hover of values from Hex
+  dependencies in constants.
+  ([Andrey Kozhev](https://github.com/ankddev))
+
 ### Formatter
 
 ### Compiler Wasm API
